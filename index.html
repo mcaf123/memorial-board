@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Memorial Board</title>
+    <script src="https://cdn.jsdelivr.net/npm/@hebcal/core@5.3.0/dist/bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&family=Frank+Ruhl+Libre:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --cols: 4;
+            --row-height: 140px; 
+            --gap: 20px;
+        }
+
+        body { margin: 0; padding: 0; background-color: #000; color: #000; font-family: 'Assistant', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar & Candle */
+        .sidebar { width: 220px; background-color: #080808; border-right: 4px solid #b8860b; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 5px 0 20px rgba(0,0,0,0.9); z-index: 10; flex-shrink: 0;}
+        .memorial-text { color: #d4af37; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 3px; margin-top: 30px; text-align: center; font-family: 'Frank Ruhl Libre', serif; line-height: 1.5; }
+        
+        .candle-container { position: relative; width: 60px; height: 200px; margin-top: 40px; }
+        .candle-body { width: 100%; height: 100%; background: linear-gradient(to right, #e6b85c, #ffefc2, #e6b85c); border-radius: 4px; box-shadow: inset -5px 0 10px rgba(0,0,0,0.4); opacity: 0.9; position: relative; z-index: 1; }
+        .wick { width: 4px; height: 15px; background: #333; margin: 0 auto; position: relative; top: -15px; z-index: 2; }
+        
+        .flame { 
+            width: 18px; height: 60px; 
+            background: radial-gradient(ellipse at center, white 5%, #ffcc00 30%, #ff4500 85%); 
+            border-radius: 50% 50% 20% 20%; 
+            margin: -275px auto 0; 
+            box-shadow: 0 0 20px #ff4500, 0 0 40px #ff8c00; 
+            animation: flicker 0.1s infinite alternate; 
+            transform-origin: bottom center;
+            position: relative; z-index: 3; 
+        }
+        @keyframes flicker { 0% { transform: scale(1) rotate(-1deg); opacity: 0.95; } 100% { transform: scale(1.04) rotate(1deg); opacity: 1; } }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px; overflow-y: hidden; display: flex; flex-direction: column; }
+        .header-info { color: #d4af37; text-align: center; font-size: 1.8em; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 15px; font-family: 'Frank Ruhl Libre', serif; flex-shrink: 0; }
+        
+        .grid-viewport {
+            flex: 1; 
+            overflow-y: hidden; 
+            scroll-behavior: smooth;
+            position: relative;
+        }
+
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(var(--cols), 1fr); 
+            grid-auto-rows: var(--row-height); 
+            gap: var(--gap); 
+            padding-bottom: 0px; 
+        }
+        
+        .plaque { 
+            background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
+            border: 2px solid #8a6e2f; 
+            border-radius: 2px; 
+            padding: 10px; 
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
+            display: flex; flex-direction: column; justify-content: space-between; 
+            height: 100%; 
+            box-sizing: border-box;
+            position: relative; text-align: center; 
+        }
+        .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
+        
+        .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; margin-bottom: 2px; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; margin: 2px 0; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .footer-row { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: 700; margin-top: auto; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 4px; color: #222; }
+        .date-left { text-align: left; }
+        .date-right { text-align: right; direction: rtl; }
+        
+        .loading { color: #d4af37; text-align: center; font-size: 1.5em; margin-top: 50px; width: 100%; }
+        .error-message { color: #ff6b6b; font-family: monospace; text-align: left; padding: 20px; background: rgba(50,0,0,0.8); border: 1px solid red; white-space: pre-wrap; margin: 20px; border-radius: 8px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="candle-container"><div class="wick"></div><div class="candle-body"></div><div class="flame"></div></div>
+        <div class="memorial-text">In Loving<br>Memory<br>זכרון עולם</div>
+    </div>
+
+    <div class="main-content">
+        <div class="header-info" id="date-display">Initializing Board...</div>
+        <div class="grid-viewport" id="viewport">
+            <div id="memorial-grid" class="grid-container">
+                <div class="loading">Loading Memorials...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SETTINGS ---
+        const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
+        const ROWS_PER_PAGE = 7;   
+        const COLS_PER_PAGE = 3;   
+        // ----------------
+
+        const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
+        // Use a different proxy backup if needed or timestamp to prevent cache
+        const SHEET_URL = "https://corsproxy.io/?" + encodeURIComponent(BASE_URL + "&t=" + new Date().getTime());
+
+        let scrollInterval = null;
+        let loadTimeout = null;
+
+        async function initBoard() {
+            try {
+                if (scrollInterval) clearInterval(scrollInterval);
+                
+                // 1. Safety Timeout: If not loaded in 10 seconds, throw error
+                loadTimeout = setTimeout(() => {
+                    showError("Connection Timeout. The board could not reach Google Sheets.\nPlease check internet connection or try refreshing.");
+                }, 10000);
+
+                // 2. Wait for layout to be ready
+                await waitForLayout();
+                calculateLayout(); 
+
+                // 3. Fetch Data
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) throw new Error(`Network Error: ${response.status} ${response.statusText}`);
+                const csvText = await response.text();
+                
+                clearTimeout(loadTimeout); // Data loaded, cancel the error timer
+
+                const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+                const data = results.data;
+
+                if (data.length > 0) {
+                    const keys = Object.keys(data[0]);
+                    const required = ['HebrewDay', 'HebrewMonth'];
+                    const missing = required.filter(k => !keys.includes(k));
+                    if (missing.length > 0) throw new Error(`MISSING COLUMNS: ${missing.join(", ")}`);
+                }
+
+                const grid = document.getElementById('memorial-grid');
+                grid.innerHTML = ''; 
+
+                const today = new Date();
+                const hDateToday = new hebcal.HDate(today);
+                document.getElementById('date-display').innerText = 
+                    `Yahrzeits for the week of ${today.toLocaleDateString()}  /  ${hDateToday.getDate()} ${translateMonth(hDateToday.getMonthName())}`;
+
+                let hasNames = false;
+                
+                for (let i = 0; i < 7; i++) {
+                    let checkDate = new Date();
+                    checkDate.setDate(today.getDate() + i);
+                    const hDate = new hebcal.HDate(checkDate);
+                    const hMonth = hDate.getMonthName();
+                    const hDay = hDate.getDate();
+
+                    const todaysNames = data.filter(row => {
+                        if (!row.HebrewDay || !row.HebrewMonth) return false;
+                        try {
+                            const rowDay = parseInt(row.HebrewDay); 
+                            const rowMonth = row.HebrewMonth.trim();
+                            return rowDay === hDay && isMonthMatch(rowMonth, hMonth);
+                        } catch (e) { return false; }
+                    });
+
+                    todaysNames.forEach(person => {
+                        hasNames = true;
+                        createPlaque(person, hDay, hMonth, grid);
+                    });
+                }
+
+                if (!hasNames) {
+                    grid.innerHTML = '<div style="color:#d4af37; text-align:center; grid-column: 1/-1;">No Yahrzeits found for the upcoming week.</div>';
+                }
+
+                // Start scrolling after short delay
+                setTimeout(startAutoScroll, 1500);
+
+            } catch (error) {
+                clearTimeout(loadTimeout);
+                console.error(error);
+                showError(error.message);
+            }
+        }
+
+        // --- SAFE LAYOUT CALCULATION ---
+        function waitForLayout() {
+            return new Promise(resolve => {
+                const check = () => {
+                    const viewport = document.getElementById('viewport');
+                    if (viewport && viewport.clientHeight > 0) resolve();
+                    else setTimeout(check, 100);
+                };
+                check();
+            });
+        }
+
+        function calculateLayout() {
+            const viewport = document.getElementById('viewport');
+            const availableHeight = viewport.clientHeight;
+            // Safety: Ensure we don't divide by 0 or create negative height
+            if (availableHeight < 100) return; 
+
+            const gap = 20; 
+            const totalGapSpace = gap * (ROWS_PER_PAGE - 1);
+            const rowHeight = (availableHeight - totalGapSpace) / ROWS_PER_PAGE;
+            
+            document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
+            document.documentElement.style.setProperty('--row-height', `${rowHeight}px`);
+            document.documentElement.style.setProperty('--gap', `${gap}px`);
+        }
+
+        // --- PAGE SCROLLING ---
+        function startAutoScroll() {
+            const viewport = document.getElementById('viewport');
+            const PAGE_DELAY = 15000; 
+            const scrollAmount = viewport.clientHeight + 20; 
+
+            scrollInterval = setInterval(() => {
+                const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+                if (viewport.scrollHeight <= viewport.clientHeight + 5) return;
+
+                if (viewport.scrollTop >= maxScroll - 10) {
+                    viewport.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    viewport.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+                }
+            }, PAGE_DELAY);
+        }
+
+        function showError(msg) {
+            const grid = document.getElementById('memorial-grid');
+            grid.innerHTML = `<div class="error-message"><strong>ERROR:</strong><br>${msg}</div>`;
+        }
+
+        function createPlaque(person, hDay, hMonth, container) {
+            const plaque = document.createElement('div');
+            plaque.className = 'plaque';
+            
+            const hebrewName = person.HebrewName || "";
+            const englishName = `${person.FirstName || ""} ${person.LastName || ""}`;
+            const englishDate = person.EnglishDate || ""; 
+            const hebrewDateStr = `${rowToHebrew(hDay)} ${translateMonth(hMonth)}`;
+
+            plaque.innerHTML = `
+                <div class="hebrew-name">${hebrewName}</div>
+                <div class="english-name">${englishName}</div>
+                <div class="footer-row">
+                    <div class="date-left">${englishDate}</div>
+                    <div class="date-right">${hebrewDateStr}</div>
+                </div>
+            `;
+            container.appendChild(plaque);
+        }
+
+        function isMonthMatch(sheetMonth, hebcalMonth) {
+            if (!sheetMonth) return false;
+            return hebcalMonth.toLowerCase().includes(sheetMonth.toLowerCase()) || 
+                   sheetMonth.toLowerCase().includes(hebcalMonth.toLowerCase());
+        }
+        function rowToHebrew(num) {
+            const gematria = ["","א","ב","ג","ד","ה","ו","ז","ח","ט","י","יא","יב","יג","יד","טו","טז","יז","יח","יט","כ","כא","כב","כג","כד","כה","כו","כז","כח","כט","ל"];
+            return gematria[num] || num;
+        }
+        function translateMonth(englishMonth) {
+            const map = {
+                'Nisan': 'ניסן', 'Iyyar': 'אייר', 'Sivan': 'סיון', 'Tamuz': 'תמוז', 'Av': 'אב', 'Elul': 'אלול',
+                'Tishrei': 'תשרי', 'Cheshvan': 'חשון', 'Kislev': 'כסלו', 'Tevet': 'טבת', 'Sh\'vat': 'שבט',
+                'Adar': 'אדר', 'Adar I': 'אדר א', 'Adar II': 'אדר ב'
+            };
+            return map[englishMonth] || englishMonth;
+        }
+
+        window.addEventListener('resize', calculateLayout);
+        window.onload = initBoard; // Ensure DOM is loaded
+        
+        setInterval(initBoard, 1000 * 60 * 60 * 4); 
+    </script>
+</body>
+</html>
