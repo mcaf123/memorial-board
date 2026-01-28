@@ -12,16 +12,13 @@
 
     <style>
         :root {
-            /* ROTATION: 90deg for standard Portrait mounting */
             --rotation: 90deg; 
-            
             /* Calculated by JS */
             --safe-width: 90vw;
             --safe-height: 90vh;
-            
             --cols: 3; 
             --row-height: 100px; 
-            --gap: 15px; /* Slightly smaller gap to help fit everything */
+            --gap: 15px; 
         }
 
         body { 
@@ -30,30 +27,20 @@
             font-family: 'Assistant', sans-serif; 
             overflow: hidden; 
             width: 100vw; height: 100vh;
-            
-            /* Flexbox to center the Safe Box on the screen */
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: none; /* We keep this just in case the TV respects it */
         }
 
-        /* --- THE ROTATION WRAPPER --- */
-        /* This wrapper is now sized specifically to be SMALLER than the screen */
         .rotation-wrapper {
-            /* 1. Set the size to the calculated "Safe Area" */
             width: var(--safe-height); 
             height: var(--safe-width);
-            
-            /* 2. Rotate it */
             transform: rotate(var(--rotation));
-            
-            /* 3. Styling */
             display: flex;
             overflow: hidden;
             background: #000;
-            
-            /* Debug border: Uncomment the next line if you need to see the safe zone edges */
-            /* border: 2px solid red; */
+            position: relative; 
         }
         
         /* Sidebar */
@@ -132,68 +119,14 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        /* ZONE 1: TOP THIRD (Hebrew Name) */
-        .plaque-zone-top {
-            flex: 1; 
-            width: 100%;
-            display: flex;
-            align-items: center; 
-            justify-content: center; 
-            padding: 0 8px;
-            box-sizing: border-box;
-        }
-        .hebrew-name { 
-            font-family: 'Frank Ruhl Libre', serif; 
-            font-weight: 700; 
-            font-size: 1.3em; 
-            color: #1a1a1a; 
-            direction: rtl; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            width: 100%;
-        }
+        .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
+        .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
-        /* ZONE 2: MIDDLE THIRD (English Name) */
-        .plaque-zone-mid {
-            flex: 1; 
-            width: 100%;
-            display: flex;
-            align-items: center; 
-            justify-content: center; 
-            padding: 0 8px;
-            box-sizing: border-box;
-        }
-        .english-name { 
-            font-family: 'Assistant', sans-serif; 
-            font-weight: 800; 
-            font-size: 1.2em; 
-            text-transform: uppercase; 
-            color: #000; 
-            letter-spacing: 0.5px; 
-            line-height: 1.1; 
-            display: -webkit-box; 
-            -webkit-line-clamp: 2; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
-            width: 100%;
-        }
+        .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
+        .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
 
-        /* ZONE 3: BOTTOM THIRD (Dates) */
-        .plaque-zone-bot {
-            flex: 1; 
-            width: 100%;
-            display: flex;
-            align-items: flex-end; 
-            justify-content: space-between; 
-            padding: 0 8px 6px 8px; 
-            box-sizing: border-box;
-        }
-        .footer-text {
-            font-size: 0.8em; 
-            font-weight: 700; 
-            color: #222; 
-        }
+        .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; }
+        .footer-text { font-size: 0.8em; font-weight: 700; color: #222; }
         .date-left { text-align: left; }
         .date-right { text-align: right; direction: rtl; }
         
@@ -222,14 +155,9 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        // ** GRID SETTINGS **
-        const ROWS_PER_PAGE = 10;   
+        const ROWS_PER_PAGE = 7;   
         const COLS_PER_PAGE = 3;   
-        
-        // ** ACTION SAFE ZONE (Percentage) **
-        // 0.9 means we only use 90% of the screen width/height.
-        // This creates a 5% black border on all sides to prevent cutting off.
-        const SAFE_SCALE = 0.90;
+        const SAFE_SCALE = 0.90; // 90% Safe Zone to avoid cut-off
         // ----------------
 
         const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
@@ -245,7 +173,6 @@
                     showError("Connection Timeout. The board could not reach Google Sheets.\nPlease check internet connection or try refreshing.");
                 }, 10000);
 
-                // Wait for layout and force initial calculation
                 await waitForLayout();
                 calculateLayout(); 
 
@@ -268,7 +195,6 @@
                 const grid = document.getElementById('memorial-grid');
                 grid.innerHTML = ''; 
 
-                // --- WEEKLY LOGIC ---
                 const today = new Date();
                 const dayOfWeek = today.getDay(); // 0 = Sunday
                 const startOfWeek = new Date(today);
@@ -276,7 +202,6 @@
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-                // Header Dates
                 const enFormat = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 const dateRangeEn = `${startOfWeek.toLocaleDateString('en-GB', enFormat)} - ${endOfWeek.toLocaleDateString('en-GB', enFormat)}`;
                 
@@ -332,7 +257,6 @@
         function waitForLayout() {
             return new Promise(resolve => {
                 const check = () => {
-                    // Check if innerWidth is available (browser is ready)
                     if (window.innerWidth > 0) resolve();
                     else setTimeout(check, 100);
                 };
@@ -341,28 +265,18 @@
         }
 
         function calculateLayout() {
-            // 1. Get exact pixel dimensions of the VISIBLE browser window
             const winWidth = window.innerWidth;
             const winHeight = window.innerHeight;
-
-            // 2. Apply the "Safe Scale" (90%)
-            // Since we are rotating 90deg, the "Width" of the container is actually the screen "Height"
             const safeContainerWidth = winHeight * SAFE_SCALE;
             const safeContainerHeight = winWidth * SAFE_SCALE;
 
-            // 3. Set CSS Variables for the Rotation Wrapper
             document.documentElement.style.setProperty('--safe-width', `${safeContainerHeight}px`);
             document.documentElement.style.setProperty('--safe-height', `${safeContainerWidth}px`);
             
-            // 4. Calculate Grid Rows inside that Safe Box
-            // We need to fetch the viewport again now that sizes are set
-            // Small delay to allow DOM to update
             setTimeout(() => {
                 const viewport = document.getElementById('viewport');
                 const availableHeight = viewport.clientHeight;
                 const gap = 15; 
-                
-                // No need for extra safety margin here, the Safe Box IS the safety margin.
                 const totalGapSpace = gap * (ROWS_PER_PAGE - 1);
                 const rowHeight = Math.floor((availableHeight - totalGapSpace) / ROWS_PER_PAGE);
                 
@@ -438,7 +352,6 @@
             return map[englishMonth] || englishMonth;
         }
 
-        // Recalculate on resize (e.g. browser bar showing/hiding)
         window.addEventListener('resize', calculateLayout);
         window.onload = initBoard; 
         
