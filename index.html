@@ -13,10 +13,10 @@
     <style>
         :root {
             /* --- ROTATION SETTING --- */
-            /* If the board is upside down, change this to -90deg */
+            /* Standard clockwise rotation for vertical TVs */
             --rotation: 90deg; 
             
-            /* Grid settings updated by JS */
+            /* Grid settings (updated automatically by JS) */
             --cols: 2; 
             --row-height: 140px; 
             --gap: 20px;
@@ -32,9 +32,9 @@
         }
 
         /* --- THE MAGIC ROTATION WRAPPER --- */
-        /* This forces the layout to be Portrait, then spins it to fit the TV */
+        /* Forces the layout to be Portrait, then spins it to fit the TV */
         .rotation-wrapper {
-            /* Swap Width and Height logic */
+            /* Swap Width and Height logic for rotation */
             width: 100vh; 
             height: 100vw;
             
@@ -57,6 +57,7 @@
         .candle-body { width: 100%; height: 100%; background: linear-gradient(to right, #e6b85c, #ffefc2, #e6b85c); border-radius: 4px; box-shadow: inset -5px 0 10px rgba(0,0,0,0.4); opacity: 0.9; position: relative; z-index: 1; }
         .wick { width: 4px; height: 15px; background: #333; margin: 0 auto; position: relative; top: -15px; z-index: 2; }
         
+        /* Taller, Darker Flame */
         .flame { 
             width: 18px; height: 60px; 
             background: radial-gradient(ellipse at center, white 5%, #ffcc00 30%, #ff4500 85%); 
@@ -73,6 +74,7 @@
         .main-content { flex: 1; padding: 30px; overflow-y: hidden; display: flex; flex-direction: column; }
         .header-info { color: #d4af37; text-align: center; font-size: 1.8em; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 15px; font-family: 'Frank Ruhl Libre', serif; flex-shrink: 0; }
         
+        /* The scrolling viewport */
         .grid-viewport {
             flex: 1; 
             overflow-y: hidden; 
@@ -104,6 +106,8 @@
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; margin-bottom: 2px; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; margin: 2px 0; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .footer-row { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: 700; margin-top: auto; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 4px; color: #222; }
+        .date-left { text-align: left; }
+        .date-right { text-align: right; direction: rtl; }
         
         .loading { color: #d4af37; text-align: center; font-size: 1.5em; margin-top: 50px; width: 100%; }
         .error-message { color: #ff6b6b; font-family: monospace; text-align: left; padding: 20px; background: rgba(50,0,0,0.8); border: 1px solid red; white-space: pre-wrap; margin: 20px; border-radius: 8px; font-size: 1.2em; }
@@ -129,7 +133,7 @@
     </div>
 
     <script>
-        // --- PASSWORD PROTECTION ---
+        // --- PASSWORD PROTECTION (Optional) ---
         // Uncomment the lines below if you want the password back
         /*
         const password = prompt("Please enter the password to view the board:");
@@ -142,14 +146,20 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        // ** PORTRAIT MODE SETTINGS **
-        // Since we are rotated, "ROWS" means how many down the long edge
-        // and "COLS" means how many across the short edge.
-        const ROWS_PER_PAGE = 10;   // Taller list
-        const COLS_PER_PAGE = 4;   // Narrower width
+        // ** PORTRAIT MODE GRID SETTINGS **
+        // Change these to control how many plaques appear per page
+        const ROWS_PER_PAGE = 6;   // Taller list (Vertical)
+        const COLS_PER_PAGE = 2;   // Narrower width
+        
+        // ** SAFETY BUFFER **
+        // Reserves 20px of empty space at the bottom to ensure plaques 
+        // are never cut off by the TV bezel or browser toolbar.
+        const SAFETY_MARGIN = 20;
         // ----------------
 
         const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
+        
+        // ** PROXY FIX ** (Using AllOrigins to fix the 403 Forbidden error)
         const SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(BASE_URL + "&t=" + new Date().getTime());
 
         let scrollInterval = null;
@@ -159,22 +169,26 @@
             try {
                 if (scrollInterval) clearInterval(scrollInterval);
                 
+                // 1. Connection Timeout Check (10 seconds)
                 loadTimeout = setTimeout(() => {
                     showError("Connection Timeout. The board could not reach Google Sheets.\nPlease check internet connection or try refreshing.");
                 }, 10000);
 
+                // 2. Prepare Layout
                 await waitForLayout();
                 calculateLayout(); 
 
+                // 3. Fetch Data
                 const response = await fetch(SHEET_URL);
                 if (!response.ok) throw new Error(`Network Error: ${response.status} ${response.statusText}`);
                 const csvText = await response.text();
                 
-                clearTimeout(loadTimeout); 
+                clearTimeout(loadTimeout); // Data loaded, cancel error timer
 
                 const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
                 const data = results.data;
 
+                // 4. Validate Data
                 if (data.length > 0) {
                     const keys = Object.keys(data[0]);
                     const required = ['HebrewDay', 'HebrewMonth'];
@@ -182,19 +196,31 @@
                     if (missing.length > 0) throw new Error(`MISSING COLUMNS: ${missing.join(", ")}`);
                 }
 
+                // 5. Render Board
                 const grid = document.getElementById('memorial-grid');
                 grid.innerHTML = ''; 
 
+                // --- NEW DATE LOGIC: WEEK OF SUNDAY - SATURDAY ---
                 const today = new Date();
-                const hDateToday = new hebcal.HDate(today);
+                
+                // Find the Sunday of the current week (0 = Sunday, 6 = Saturday)
+                const dayOfWeek = today.getDay();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
+
+                // Calculate the Hebrew date for that Sunday for the Header
+                const hDateStart = new hebcal.HDate(startOfWeek);
+                
                 document.getElementById('date-display').innerText = 
-                    `Yahrzeits for the week of ${today.toLocaleDateString()}  /  ${hDateToday.getDate()} ${translateMonth(hDateToday.getMonthName())}`;
+                    `Yahrzeits for Week of ${startOfWeek.toLocaleDateString()}  /  ${hDateStart.getDate()} ${translateMonth(hDateStart.getMonthName())}`;
 
                 let hasNames = false;
                 
+                // Loop 7 days starting specifically from SUNDAY
                 for (let i = 0; i < 7; i++) {
-                    let checkDate = new Date();
-                    checkDate.setDate(today.getDate() + i);
+                    let checkDate = new Date(startOfWeek);
+                    checkDate.setDate(startOfWeek.getDate() + i);
+                    
                     const hDate = new hebcal.HDate(checkDate);
                     const hMonth = hDate.getMonthName();
                     const hDay = hDate.getDate();
@@ -215,9 +241,10 @@
                 }
 
                 if (!hasNames) {
-                    grid.innerHTML = '<div style="color:#d4af37; text-align:center; grid-column: 1/-1;">No Yahrzeits found for the upcoming week.</div>';
+                    grid.innerHTML = '<div style="color:#d4af37; text-align:center; grid-column: 1/-1;">No Yahrzeits found for this week.</div>';
                 }
 
+                // 6. Start Scrolling
                 setTimeout(startAutoScroll, 1500);
 
             } catch (error) {
@@ -227,11 +254,12 @@
             }
         }
 
+        // --- SAFE LAYOUT CALCULATOR ---
         function waitForLayout() {
             return new Promise(resolve => {
                 const check = () => {
                     const viewport = document.getElementById('viewport');
-                    // Check width instead of height because of rotation quirks
+                    // We check clientWidth here because of the rotation quirks
                     if (viewport && viewport.clientWidth > 0) resolve();
                     else setTimeout(check, 100);
                 };
@@ -245,24 +273,33 @@
             if (availableHeight < 100) return; 
 
             const gap = 20; 
-            const totalGapSpace = gap * (ROWS_PER_PAGE - 1);
-            const rowHeight = (availableHeight - totalGapSpace) / ROWS_PER_PAGE;
+            
+            // MATH: Total Height - (Gaps + Safety Margin) divided by Rows
+            const totalGapSpace = (gap * (ROWS_PER_PAGE - 1)) + SAFETY_MARGIN;
+            
+            // Math.floor ensures we round DOWN so the plaques are never 1 pixel too tall
+            const rowHeight = Math.floor((availableHeight - totalGapSpace) / ROWS_PER_PAGE);
             
             document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
             document.documentElement.style.setProperty('--row-height', `${rowHeight}px`);
             document.documentElement.style.setProperty('--gap', `${gap}px`);
         }
 
+        // --- EXACT PAGE SCROLLING ---
         function startAutoScroll() {
             const viewport = document.getElementById('viewport');
             const PAGE_DELAY = 15000; 
-            const scrollAmount = viewport.clientHeight + 20; 
+            
+            // Scroll exactly the visible height to ensure a clean "Page Flip"
+            const scrollAmount = viewport.clientHeight; 
 
             scrollInterval = setInterval(() => {
                 const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+                
+                // Allow a tiny tolerance (5px) for floating point math
                 if (viewport.scrollHeight <= viewport.clientHeight + 5) return;
 
-                if (viewport.scrollTop >= maxScroll - 10) {
+                if (viewport.scrollTop >= maxScroll - 5) {
                     viewport.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     viewport.scrollBy({ top: scrollAmount, behavior: 'smooth' });
