@@ -150,7 +150,7 @@
         // ----------------
 
         const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
-        const SHEET_URL = "https://corsproxy.io/?" + encodeURIComponent(BASE_URL + "&t=" + new Date().getTime());
+        const SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(BASE_URL + "&t=" + new Date().getTime());
 
         let scrollInterval = null;
         let loadTimeout = null;
