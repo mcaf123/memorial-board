@@ -34,7 +34,7 @@
             align-items: center;
             justify-content: center;
             
-            /* COMMAND TO HIDE CURSOR */
+            /* COMMAND TO HIDE CURSOR (If supported by TV) */
             cursor: none; 
         }
 
@@ -49,10 +49,10 @@
             position: relative; 
         }
         
-        /* Sidebar - NOW PURE BLACK */
+        /* Sidebar - PURE BLACK to hide cursor if parked here */
         .sidebar { 
             width: 200px; 
-            background-color: #000; /* changed from #080808 to #000 */
+            background-color: #000; 
             border-right: 4px solid #b8860b; 
             display: flex; 
             flex-direction: column; 
@@ -136,15 +136,12 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        /* Zone 1: Top (Hebrew) */
         .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
-        /* Zone 2: Middle (English) */
         .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
 
-        /* Zone 3: Bottom (Dates) */
         .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; }
         .footer-text { font-size: 0.8em; font-weight: 700; color: #222; }
         .date-left { text-align: left; }
@@ -156,7 +153,6 @@
 </head>
 <body>
     <div class="rotation-wrapper">
-        
         <div class="sidebar">
             <div class="candle-container"><div class="wick"></div><div class="candle-body"></div><div class="flame"></div></div>
             <div class="memorial-text">In Loving<br>Memory<br>זכרון עולם</div>
@@ -176,7 +172,6 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        // 90% Safe Zone to prevent TV cut-off
         const SAFE_SCALE = 0.90; 
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
@@ -187,6 +182,9 @@
 
         let scrollInterval = null;
         let loadTimeout = null;
+        
+        // --- NEW: Global variable to store exact scroll distance ---
+        let calculatedScrollStep = 0; 
 
         async function initBoard() {
             try {
@@ -299,9 +297,15 @@
                 const viewport = document.getElementById('viewport');
                 const availableHeight = viewport.clientHeight;
                 const gap = 15; 
+                
+                // Calculate Row Height to fit SAFETY margin
                 const totalGapSpace = gap * (ROWS_PER_PAGE - 1);
                 const rowHeight = Math.floor((availableHeight - totalGapSpace) / ROWS_PER_PAGE);
                 
+                // --- CRITICAL FIX: Calculate the EXACT scroll distance per page ---
+                // We scroll exactly 7 rows + 7 gaps to land perfectly on the next set
+                calculatedScrollStep = (rowHeight + gap) * ROWS_PER_PAGE;
+
                 document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
                 document.documentElement.style.setProperty('--row-height', `${rowHeight}px`);
                 document.documentElement.style.setProperty('--gap', `${gap}px`);
@@ -311,10 +315,14 @@
         function startAutoScroll() {
             const viewport = document.getElementById('viewport');
             const PAGE_DELAY = 15000; 
-            const scrollAmount = viewport.clientHeight; 
+            
+            // USE THE EXACT CALCULATED STEP, NOT THE SCREEN HEIGHT
+            const scrollAmount = calculatedScrollStep; 
 
             scrollInterval = setInterval(() => {
                 const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+                
+                // Use a slightly larger tolerance (10px)
                 if (viewport.scrollHeight <= viewport.clientHeight + 10) return;
 
                 if (viewport.scrollTop >= maxScroll - 10) {
