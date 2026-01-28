@@ -20,7 +20,7 @@
             --safe-height: 90vh;
             
             --cols: 3; 
-            --row-height: 100px; 
+            --rows: 7;
             --gap: 15px; 
         }
 
@@ -33,12 +33,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            
-            /* COMMAND TO HIDE CURSOR (If supported by TV) */
             cursor: none; 
         }
 
-        /* --- THE ROTATION WRAPPER --- */
         .rotation-wrapper {
             width: var(--safe-height); 
             height: var(--safe-width);
@@ -49,7 +46,7 @@
             position: relative; 
         }
         
-        /* Sidebar - PURE BLACK to hide cursor if parked here */
+        /* Sidebar (Pure Black) */
         .sidebar { 
             width: 200px; 
             background-color: #000; 
@@ -80,7 +77,7 @@
         }
         @keyframes flicker { 0% { transform: scale(1) rotate(-1deg); opacity: 0.95; } 100% { transform: scale(1.04) rotate(1deg); opacity: 1; } }
 
-        /* Main Content */
+        /* Main Content Area */
         .main-content { flex: 1; padding: 0 0 0 20px; overflow-y: hidden; display: flex; flex-direction: column; }
         
         .header-info { 
@@ -97,45 +94,46 @@
             line-height: 1.3;
         }
         
-        .hebrew-date-line {
-            display: block;
-            margin-top: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            direction: rtl;
-        }
+        .hebrew-date-line { display: block; margin-top: 6px; font-size: 1.1em; font-weight: bold; direction: rtl; }
 
+        /* --- NEW SCROLLING SYSTEM: SNAP SCROLL --- */
         .grid-viewport {
             flex: 1; 
-            overflow-y: hidden; 
+            overflow-y: hidden; /* We scroll this via JS */
             scroll-behavior: smooth;
             position: relative;
+            /* This ensures pages snap perfectly into place */
+            scroll-snap-type: y mandatory;
         }
 
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(var(--cols), 1fr); 
-            grid-auto-rows: var(--row-height); 
-            gap: var(--gap); 
-            padding-bottom: 0px; 
+        /* A "Page" is exactly 100% of the visible area */
+        .page-container {
+            height: 100%;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            grid-template-rows: repeat(var(--rows), 1fr); /* Force equal rows */
+            gap: var(--gap);
+            padding-bottom: 20px; /* Small buffer at bottom of page */
+            box-sizing: border-box;
+            
+            /* Snap logic */
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
         }
         
-        /* --- STRICT THIRDS LAYOUT --- */
+        /* Plaque Styles */
         .plaque { 
             background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
             border: 2px solid #8a6e2f; 
             border-radius: 2px; 
             padding: 0; 
             box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
-            display: flex; 
-            flex-direction: column; 
-            height: 100%; 
-            box-sizing: border-box;
-            position: relative; 
-            text-align: center; 
+            display: flex; flex-direction: column; height: 100%; box-sizing: border-box; position: relative; text-align: center; 
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
+        /* Strict Thirds Layout */
         .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
@@ -161,9 +159,7 @@
         <div class="main-content">
             <div class="header-info" id="date-display">Initializing Board...</div>
             <div class="grid-viewport" id="viewport">
-                <div id="memorial-grid" class="grid-container">
-                    <div class="loading">Loading Memorials...</div>
-                </div>
+                <div class="loading">Loading Memorials...</div>
             </div>
         </div>
     </div>
@@ -172,7 +168,7 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        const SAFE_SCALE = 0.90; 
+        const SAFE_SCALE = 0.90; // 90% Safe Zone
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
         // ----------------
@@ -182,9 +178,7 @@
 
         let scrollInterval = null;
         let loadTimeout = null;
-        
-        // --- NEW: Global variable to store exact scroll distance ---
-        let calculatedScrollStep = 0; 
+        let pageIndex = 0; // Track which page we are viewing
 
         async function initBoard() {
             try {
@@ -212,9 +206,8 @@
                     if (missing.length > 0) throw new Error(`MISSING COLUMNS: ${missing.join(", ")}`);
                 }
 
-                const grid = document.getElementById('memorial-grid');
-                grid.innerHTML = ''; 
-
+                // --- DATA PROCESSING START ---
+                // 1. Calculate Date Range
                 const today = new Date();
                 const dayOfWeek = today.getDay(); // 0 = Sunday
                 const startOfWeek = new Date(today);
@@ -222,6 +215,7 @@
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
 
+                // 2. Set Header
                 const enFormat = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 const dateRangeEn = `${startOfWeek.toLocaleDateString('en-GB', enFormat)} - ${endOfWeek.toLocaleDateString('en-GB', enFormat)}`;
                 
@@ -236,8 +230,8 @@
                      ${dateRangeEn}
                      <span class="hebrew-date-line">${dateRangeHeb}</span>`;
 
-                let hasNames = false;
-                
+                // 3. Collect ALL Names for the Week
+                let allPlaques = [];
                 for (let i = 0; i < 7; i++) {
                     let checkDate = new Date(startOfWeek);
                     checkDate.setDate(startOfWeek.getDate() + i);
@@ -254,18 +248,39 @@
                             return rowDay === hDay && isMonthMatch(rowMonth, hMonth);
                         } catch (e) { return false; }
                     });
-
-                    todaysNames.forEach(person => {
-                        hasNames = true;
-                        createPlaque(person, hDay, hMonth, grid);
+                    
+                    // Add calculated display dates to the object for later
+                    todaysNames.forEach(p => {
+                        p.calcHebDate = `${rowToHebrew(hDay)} ${translateMonth(hMonth)}`;
+                        allPlaques.push(p);
                     });
                 }
 
-                if (!hasNames) {
-                    grid.innerHTML = '<div style="color:#d4af37; text-align:center; grid-column: 1/-1; margin-top: 50px;">No Yahrzeits found for this week.</div>';
+                // 4. Render Pages
+                const viewport = document.getElementById('viewport');
+                viewport.innerHTML = ''; // Clear loading
+
+                if (allPlaques.length === 0) {
+                    viewport.innerHTML = '<div style="color:#d4af37; text-align:center; margin-top: 50px;">No Yahrzeits found for this week.</div>';
+                    return;
                 }
 
-                setTimeout(startAutoScroll, 1500);
+                // --- PAGINATION LOGIC ---
+                const itemsPerPage = ROWS_PER_PAGE * COLS_PER_PAGE;
+                let currentPageDiv = null;
+
+                allPlaques.forEach((person, index) => {
+                    // Start a new page every X items
+                    if (index % itemsPerPage === 0) {
+                        currentPageDiv = document.createElement('div');
+                        currentPageDiv.className = 'page-container';
+                        viewport.appendChild(currentPageDiv);
+                    }
+                    createPlaque(person, person.calcHebDate, currentPageDiv);
+                });
+
+                // Start Auto Scroll (Page Flipping)
+                setTimeout(startPageScroll, 1500);
 
             } catch (error) {
                 clearTimeout(loadTimeout);
@@ -276,10 +291,7 @@
 
         function waitForLayout() {
             return new Promise(resolve => {
-                const check = () => {
-                    if (window.innerWidth > 0) resolve();
-                    else setTimeout(check, 100);
-                };
+                const check = () => { if (window.innerWidth > 0) resolve(); else setTimeout(check, 100); };
                 check();
             });
         }
@@ -292,60 +304,47 @@
 
             document.documentElement.style.setProperty('--safe-width', `${safeContainerHeight}px`);
             document.documentElement.style.setProperty('--safe-height', `${safeContainerWidth}px`);
-            
-            setTimeout(() => {
-                const viewport = document.getElementById('viewport');
-                const availableHeight = viewport.clientHeight;
-                const gap = 15; 
-                
-                // Calculate Row Height to fit SAFETY margin
-                const totalGapSpace = gap * (ROWS_PER_PAGE - 1);
-                const rowHeight = Math.floor((availableHeight - totalGapSpace) / ROWS_PER_PAGE);
-                
-                // --- CRITICAL FIX: Calculate the EXACT scroll distance per page ---
-                // We scroll exactly 7 rows + 7 gaps to land perfectly on the next set
-                calculatedScrollStep = (rowHeight + gap) * ROWS_PER_PAGE;
-
-                document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
-                document.documentElement.style.setProperty('--row-height', `${rowHeight}px`);
-                document.documentElement.style.setProperty('--gap', `${gap}px`);
-            }, 50);
+            document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
+            document.documentElement.style.setProperty('--rows', ROWS_PER_PAGE);
+            // Gap is fixed in CSS var now
         }
 
-        function startAutoScroll() {
+        // --- NEW: PAGE FLIP SCROLLER ---
+        function startPageScroll() {
             const viewport = document.getElementById('viewport');
-            const PAGE_DELAY = 15000; 
+            const pages = document.querySelectorAll('.page-container');
             
-            // USE THE EXACT CALCULATED STEP, NOT THE SCREEN HEIGHT
-            const scrollAmount = calculatedScrollStep; 
+            // If only 1 page, don't scroll
+            if (pages.length <= 1) return;
+
+            const PAGE_DELAY = 15000; 
 
             scrollInterval = setInterval(() => {
-                const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+                // Increment page index
+                pageIndex++;
                 
-                // Use a slightly larger tolerance (10px)
-                if (viewport.scrollHeight <= viewport.clientHeight + 10) return;
-
-                if (viewport.scrollTop >= maxScroll - 10) {
-                    viewport.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    viewport.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+                // If we reached the end, go back to top (0)
+                if (pageIndex >= pages.length) {
+                    pageIndex = 0;
                 }
+
+                // Smoothly scroll to that specific page element
+                pages[pageIndex].scrollIntoView({ behavior: 'smooth' });
             }, PAGE_DELAY);
         }
 
         function showError(msg) {
-            const grid = document.getElementById('memorial-grid');
-            grid.innerHTML = `<div class="error-message"><strong>ERROR:</strong><br>${msg}</div>`;
+            const vp = document.getElementById('viewport');
+            vp.innerHTML = `<div class="error-message"><strong>ERROR:</strong><br>${msg}</div>`;
         }
 
-        function createPlaque(person, hDay, hMonth, container) {
+        function createPlaque(person, hebrewDateStr, container) {
             const plaque = document.createElement('div');
             plaque.className = 'plaque';
             
             const hebrewName = person.HebrewName || "";
             const englishName = `${person.FirstName || ""} ${person.LastName || ""}`;
             const englishDate = person.EnglishDate || ""; 
-            const hebrewDateStr = `${rowToHebrew(hDay)} ${translateMonth(hMonth)}`;
 
             plaque.innerHTML = `
                 <div class="plaque-zone-top">
