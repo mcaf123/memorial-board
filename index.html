@@ -12,10 +12,13 @@
 
     <style>
         :root {
+            /* ROTATION: 90deg for standard Portrait mounting */
             --rotation: 90deg; 
+            
             /* Calculated by JS */
             --safe-width: 90vw;
             --safe-height: 90vh;
+            
             --cols: 3; 
             --row-height: 100px; 
             --gap: 15px; 
@@ -30,9 +33,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: none; /* We keep this just in case the TV respects it */
+            
+            /* COMMAND TO HIDE CURSOR */
+            cursor: none; 
         }
 
+        /* --- THE ROTATION WRAPPER --- */
         .rotation-wrapper {
             width: var(--safe-height); 
             height: var(--safe-width);
@@ -43,8 +49,19 @@
             position: relative; 
         }
         
-        /* Sidebar */
-        .sidebar { width: 200px; background-color: #080808; border-right: 4px solid #b8860b; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 5px 0 20px rgba(0,0,0,0.9); z-index: 10; flex-shrink: 0;}
+        /* Sidebar - NOW PURE BLACK */
+        .sidebar { 
+            width: 200px; 
+            background-color: #000; /* changed from #080808 to #000 */
+            border-right: 4px solid #b8860b; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 5px 0 20px rgba(0,0,0,0.9); 
+            z-index: 10; 
+            flex-shrink: 0;
+        }
         .memorial-text { color: #d4af37; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 3px; margin-top: 30px; text-align: center; font-family: 'Frank Ruhl Libre', serif; line-height: 1.5; }
         
         .candle-container { position: relative; width: 60px; height: 200px; margin-top: 40px; }
@@ -119,12 +136,15 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
+        /* Zone 1: Top (Hebrew) */
         .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
+        /* Zone 2: Middle (English) */
         .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
 
+        /* Zone 3: Bottom (Dates) */
         .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; }
         .footer-text { font-size: 0.8em; font-weight: 700; color: #222; }
         .date-left { text-align: left; }
@@ -136,6 +156,7 @@
 </head>
 <body>
     <div class="rotation-wrapper">
+        
         <div class="sidebar">
             <div class="candle-container"><div class="wick"></div><div class="candle-body"></div><div class="flame"></div></div>
             <div class="memorial-text">In Loving<br>Memory<br>זכרון עולם</div>
@@ -155,9 +176,10 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
+        // 90% Safe Zone to prevent TV cut-off
+        const SAFE_SCALE = 0.90; 
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
-        const SAFE_SCALE = 0.90; // 90% Safe Zone to avoid cut-off
         // ----------------
 
         const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
