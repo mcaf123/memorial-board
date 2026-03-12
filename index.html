@@ -13,8 +13,8 @@
     <style>
         :root {
             --rotation: 90deg; 
-            --safe-width: 90vw;
-            --safe-height: 90vh;
+            --safe-width: 96vw; /* Increased to use more screen real estate */
+            --safe-height: 96vh; /* Increased to use more screen real estate */
             --cols: 3; 
             --rows: 7;
             --gap: 15px; 
@@ -146,51 +146,55 @@
             grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
             grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); 
             gap: var(--gap);
-            padding-bottom: 20px; 
+            padding-bottom: 15px; 
             box-sizing: border-box;
             scroll-snap-align: start;
             scroll-snap-stop: always;
         }
         
+        /* --- NEW STRICT GRID LAYOUT FOR PLAQUES --- */
         .plaque { 
             background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
             border: 2px solid #8a6e2f; 
             border-radius: 2px; 
-            /* Optimized padding: gives room for larger text without touching borders */
-            padding: 8px; 
+            padding: 4px 10px; /* Reduced vertical padding to give text more room */
             box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
-            display: flex; flex-direction: column; height: 100%; box-sizing: border-box; position: relative; text-align: center; 
+            
+            /* Replaced Flex with a rigid 3-row Grid to stop sections crushing each other */
+            display: grid; 
+            grid-template-rows: 30% 45% 25%; 
+            
+            box-sizing: border-box; 
+            position: relative; 
+            text-align: center; 
             font-size: var(--plaque-font-size);
             overflow: hidden;
-            min-height: 0; 
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        /* --- FONT SIZES INCREASED --- */
-        .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 0; overflow: hidden; }
+        .plaque-zone-top { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
         .hebrew-name { 
-            font-family: 'Frank Ruhl Libre', serif; font-weight: 700; 
-            font-size: 1.4em; /* Increased for better legibility */
-            color: #1a1a1a; direction: rtl; width: 100%; 
+            font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.25em; color: #1a1a1a; direction: rtl; width: 100%; 
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-height: 1.1;
         }
 
-        .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 0; overflow: hidden; }
+        .plaque-zone-mid { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
         .english-name { 
-            font-family: 'Assistant', sans-serif; font-weight: 800; 
-            font-size: 1.3em; /* Increased for prominent display */
-            text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; 
+            font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.1em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+            width: 100%; 
+            line-height: 1.1;
         }
 
-        .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; box-sizing: border-box; min-height: 0; overflow: hidden; }
-        .footer-text { 
-            font-size: 0.85em; /* Scaled up to match new proportions */
-            font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-        }
+        .plaque-zone-bot { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; height: 100%; overflow: hidden; padding-bottom: 2px; }
+        .footer-text { font-size: 0.8em; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .date-left { text-align: left; padding-right: 5px; }
         .date-right { text-align: right; direction: rtl; padding-left: 5px; }
         
@@ -224,7 +228,8 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        const SAFE_SCALE = 0.90; 
+        // Pushed to 96% to make massive use of screen real estate.
+        const SAFE_SCALE = 0.96; 
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
         // ----------------
@@ -439,8 +444,8 @@
             const totalGapSpace = 15 * (ROWS_PER_PAGE - 1);
             const rowHeight = (gridHeight - totalGapSpace) / ROWS_PER_PAGE;
             
-            // Re-balanced base multiplier to give a solid starting point for the new larger em values
-            const dynamicFontSize = Math.max(11, rowHeight * 0.12);
+            // Tuned base font multiplier. Grid structure will guarantee this fits.
+            const dynamicFontSize = Math.max(12, rowHeight * 0.15); 
             document.documentElement.style.setProperty('--plaque-font-size', `${dynamicFontSize}px`);
         }
 
