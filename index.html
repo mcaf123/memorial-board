@@ -156,7 +156,7 @@
             background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
             border: 2px solid #8a6e2f; 
             border-radius: 2px; 
-            padding: 4px 8px; 
+            padding: 4px 10px; /* Enhanced horizontal padding */
             box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
             display: grid; 
             grid-template-rows: 35% 45% 20%; 
@@ -197,10 +197,34 @@
             line-height: 1.15;
         }
 
-        .plaque-zone-bot { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; height: 100%; overflow: hidden; padding-bottom: 2px; }
-        .footer-text { font-size: 0.8em; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .date-left { text-align: left; padding-right: 5px; }
-        .date-right { text-align: right; direction: rtl; padding-left: 5px; }
+        /* --- FIXED CLIPPING AND MARGIN SPACING FOR DATES --- */
+        .plaque-zone-bot { 
+            display: flex; 
+            align-items: flex-end; 
+            justify-content: space-between; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            padding-bottom: 2px; 
+        }
+        .footer-text { 
+            font-size: 0.85em; 
+            font-weight: 700; 
+            color: #222; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        /* Padding added to pull text inwards from the edges */
+        .date-left { 
+            text-align: left; 
+            padding-left: 6px; 
+        }
+        .date-right { 
+            text-align: right; 
+            direction: rtl; 
+            padding-right: 6px; /* This explicitly stops the 'כ' from clipping */
+        }
         
         .loading { color: #d4af37; text-align: center; font-size: 1.5em; margin-top: 50px; width: 100%; }
         .error-message { color: #ff6b6b; font-family: monospace; text-align: left; padding: 20px; background: rgba(50,0,0,0.8); border: 1px solid red; white-space: pre-wrap; margin: 20px; border-radius: 8px; font-size: 1.2em; }
@@ -362,28 +386,23 @@
                         return info.day === hDay && isMonthMatch(info.month, hMonth);
                     });
                     
-                    // --- NEW LAST NAME SORTING LOGIC ---
                     todaysNames.sort((a, b) => {
-                        // Helper to split English name into [First/Middle] and [Last]
                         const extractNames = (nameStr) => {
                             const parts = (nameStr || "").trim().toLowerCase().split(/\s+/);
                             if (parts.length === 0 || parts[0] === "") return { last: "", first: "" };
                             if (parts.length === 1) return { last: parts[0], first: "" };
-                            const last = parts.pop(); // Grabs the very last word
-                            const first = parts.join(" "); // Joins whatever is left
+                            const last = parts.pop(); 
+                            const first = parts.join(" "); 
                             return { last, first };
                         };
 
                         const nameA = extractNames(a.EnglishName);
                         const nameB = extractNames(b.EnglishName);
 
-                        // Compare the Last Names first
                         const lastCompare = nameA.last.localeCompare(nameB.last);
                         if (lastCompare !== 0) {
                             return lastCompare;
                         }
-                        
-                        // If Last Names are identical, break the tie with the First Name
                         return nameA.first.localeCompare(nameB.first);
                     });
 
