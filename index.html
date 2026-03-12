@@ -12,13 +12,9 @@
 
     <style>
         :root {
-            /* ROTATION: 90deg for standard Portrait mounting */
             --rotation: 90deg; 
-            
-            /* Calculated by JS */
             --safe-width: 90vw;
             --safe-height: 90vh;
-            
             --cols: 3; 
             --rows: 7;
             --gap: 15px; 
@@ -46,7 +42,6 @@
             position: relative; 
         }
         
-        /* Sidebar (Pure Black) */
         .sidebar { 
             width: 200px; 
             background-color: #000; 
@@ -58,10 +53,10 @@
             box-shadow: 5px 0 20px rgba(0,0,0,0.9); 
             z-index: 10; 
             flex-shrink: 0;
+            padding: 20px 0; 
         }
-        .memorial-text { color: #d4af37; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 3px; margin-top: 30px; text-align: center; font-family: 'Frank Ruhl Libre', serif; line-height: 1.5; }
         
-        .candle-container { position: relative; width: 60px; height: 200px; margin-top: 40px; }
+        .candle-container { position: relative; width: 60px; height: 180px; margin-top: 10px; }
         .candle-body { width: 100%; height: 100%; background: linear-gradient(to right, #e6b85c, #ffefc2, #e6b85c); border-radius: 4px; box-shadow: inset -5px 0 10px rgba(0,0,0,0.4); opacity: 0.9; position: relative; z-index: 1; }
         .wick { width: 4px; height: 15px; background: #333; margin: 0 auto; position: relative; top: -15px; z-index: 2; }
         
@@ -69,7 +64,7 @@
             width: 18px; height: 60px; 
             background: radial-gradient(ellipse at center, white 5%, #ffcc00 30%, #ff4500 85%); 
             border-radius: 50% 50% 20% 20%; 
-            margin: -275px auto 0; 
+            margin: -255px auto 0; 
             box-shadow: 0 0 20px #ff4500, 0 0 40px #ff8c00; 
             animation: flicker 0.1s infinite alternate; 
             transform-origin: bottom center;
@@ -77,7 +72,45 @@
         }
         @keyframes flicker { 0% { transform: scale(1) rotate(-1deg); opacity: 0.95; } 100% { transform: scale(1.04) rotate(1deg); opacity: 1; } }
 
-        /* Main Content Area */
+        .memorial-text { 
+            color: #d4af37; 
+            font-size: 1.2rem; 
+            text-transform: uppercase; 
+            letter-spacing: 3px; 
+            margin-top: 30px; 
+            text-align: center; 
+            font-family: 'Frank Ruhl Libre', serif; 
+            line-height: 1.5; 
+        }
+
+        .live-clock {
+            margin-top: 40px;
+            text-align: center;
+            width: 100%;
+        }
+        .clock-time {
+            color: #d4af37;
+            font-family: 'Assistant', sans-serif;
+            font-size: 2.8em; 
+            font-weight: 700;
+            letter-spacing: 2px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+        .clock-date-en {
+            color: #cfaa60;
+            font-family: 'Assistant', sans-serif;
+            font-size: 1.3em; 
+            margin-bottom: 6px;
+        }
+        .clock-date-heb {
+            color: #cfaa60;
+            font-family: 'Frank Ruhl Libre', serif;
+            font-size: 1.5em; 
+            font-weight: 700;
+            direction: rtl;
+        }
+
         .main-content { flex: 1; padding: 0 0 0 20px; overflow-y: hidden; display: flex; flex-direction: column; }
         
         .header-info { 
@@ -96,33 +129,27 @@
         
         .hebrew-date-line { display: block; margin-top: 6px; font-size: 1.1em; font-weight: bold; direction: rtl; }
 
-        /* --- NEW SCROLLING SYSTEM: SNAP SCROLL --- */
         .grid-viewport {
             flex: 1; 
-            overflow-y: hidden; /* We scroll this via JS */
+            overflow-y: hidden; 
             scroll-behavior: smooth;
             position: relative;
-            /* This ensures pages snap perfectly into place */
             scroll-snap-type: y mandatory;
         }
 
-        /* A "Page" is exactly 100% of the visible area */
         .page-container {
             height: 100%;
             width: 100%;
             display: grid;
             grid-template-columns: repeat(var(--cols), 1fr);
-            grid-template-rows: repeat(var(--rows), 1fr); /* Force equal rows */
+            grid-template-rows: repeat(var(--rows), 1fr); 
             gap: var(--gap);
-            padding-bottom: 20px; /* Small buffer at bottom of page */
+            padding-bottom: 20px; 
             box-sizing: border-box;
-            
-            /* Snap logic */
             scroll-snap-align: start;
             scroll-snap-stop: always;
         }
         
-        /* Plaque Styles */
         .plaque { 
             background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
             border: 2px solid #8a6e2f; 
@@ -133,7 +160,6 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        /* Strict Thirds Layout */
         .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
@@ -153,7 +179,14 @@
     <div class="rotation-wrapper">
         <div class="sidebar">
             <div class="candle-container"><div class="wick"></div><div class="candle-body"></div><div class="flame"></div></div>
+            
             <div class="memorial-text">In Loving<br>Memory<br>זכרון עולם</div>
+
+            <div class="live-clock">
+                <div id="time-display" class="clock-time">00:00:00</div>
+                <div id="en-date-display" class="clock-date-en">--/--/----</div>
+                <div id="heb-date-display" class="clock-date-heb">-- -- --</div>
+            </div>
         </div>
 
         <div class="main-content">
@@ -168,54 +201,109 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        const SAFE_SCALE = 0.90; // 90% Safe Zone
+        const SAFE_SCALE = 0.90; 
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
         // ----------------
 
-        const BASE_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
-        const SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(BASE_URL + "&t=" + new Date().getTime());
-
         let scrollInterval = null;
-        let loadTimeout = null;
-        let pageIndex = 0; // Track which page we are viewing
+        let pageIndex = 0; 
+
+        async function fetchSpreadsheetData() {
+            const cacheKey = 'memorialBoardCache';
+            const cacheTimeKey = 'memorialBoardCacheTime';
+            const now = new Date().getTime();
+            
+            const directUrl = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv&t=${now}`;
+            const proxyUrl1 = `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}`;
+            const proxyUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
+            
+            const urlsToTry = [directUrl, proxyUrl1, proxyUrl2];
+
+            for (let url of urlsToTry) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000); 
+                    
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        localStorage.setItem(cacheKey, csvText);
+                        localStorage.setItem(cacheTimeKey, now.toString());
+                        return csvText;
+                    }
+                } catch (error) {
+                    console.warn(`Connection failed for URL: ${url}. Trying next...`);
+                }
+            }
+
+            const savedData = localStorage.getItem(cacheKey);
+            if (savedData) {
+                console.log("Internet/Servers down. Loading board from offline cache.");
+                return savedData;
+            }
+
+            throw new Error("Could not connect to Google Sheets, and no offline backup exists. Please check internet connection.");
+        }
+
+
+        function updateClock() {
+            const now = new Date();
+            
+            const timeStr = now.toLocaleTimeString('en-GB', { hour12: false });
+            document.getElementById('time-display').innerText = timeStr;
+            
+            const enDateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            document.getElementById('en-date-display').innerText = enDateStr;
+            
+            const hDate = new hebcal.HDate(now);
+            const hDayStr = rowToHebrew(hDate.getDate());
+            const hMonthStr = translateMonth(hDate.getMonthName());
+            const hYearStr = yearToHebrew(hDate.getFullYear());
+            
+            document.getElementById('heb-date-display').innerText = `${hDayStr} ${hMonthStr} ${hYearStr}`;
+        }
 
         async function initBoard() {
             try {
                 if (scrollInterval) clearInterval(scrollInterval);
-                loadTimeout = setTimeout(() => {
-                    showError("Connection Timeout. The board could not reach Google Sheets.\nPlease check internet connection or try refreshing.");
-                }, 10000);
-
+                
                 await waitForLayout();
                 calculateLayout(); 
 
-                const response = await fetch(SHEET_URL);
-                if (!response.ok) throw new Error(`Network Error: ${response.status} ${response.statusText}`);
-                const csvText = await response.text();
-                
-                clearTimeout(loadTimeout); 
-
+                const csvText = await fetchSpreadsheetData();
                 const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
                 const data = results.data;
 
                 if (data.length > 0) {
                     const keys = Object.keys(data[0]);
-                    const required = ['HebrewDay', 'HebrewMonth'];
-                    const missing = required.filter(k => !keys.includes(k));
-                    if (missing.length > 0) throw new Error(`MISSING COLUMNS: ${missing.join(", ")}`);
+                    if (!keys.includes('HebrewDate') && (!keys.includes('HebrewDay') || !keys.includes('HebrewMonth'))) {
+                        throw new Error(`MISSING COLUMNS: Your spreadsheet must have either a 'HebrewDate' column OR 'HebrewDay' and 'HebrewMonth' columns.`);
+                    }
                 }
 
-                // --- DATA PROCESSING START ---
-                // 1. Calculate Date Range
+                // --- NEW SHABBOS TO FRIDAY LOGIC ---
                 const today = new Date();
-                const dayOfWeek = today.getDay(); // 0 = Sunday
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - dayOfWeek);
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday ... 6 = Saturday
+                
+                let daysToSubtract = 0;
+                if (dayOfWeek === 6) {
+                    // Today is Saturday, start the week today
+                    daysToSubtract = 0;
+                } else {
+                    // Today is Sunday through Friday. Subtract dayOfWeek + 1 to get back to Saturday.
+                    // (e.g. Sunday = 0. Subtract 1 to get to Saturday)
+                    daysToSubtract = dayOfWeek + 1;
+                }
 
-                // 2. Set Header
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - daysToSubtract);
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday + 6 days = Friday
+
                 const enFormat = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 const dateRangeEn = `${startOfWeek.toLocaleDateString('en-GB', enFormat)} - ${endOfWeek.toLocaleDateString('en-GB', enFormat)}`;
                 
@@ -230,7 +318,6 @@
                      ${dateRangeEn}
                      <span class="hebrew-date-line">${dateRangeHeb}</span>`;
 
-                // 3. Collect ALL Names for the Week
                 let allPlaques = [];
                 for (let i = 0; i < 7; i++) {
                     let checkDate = new Date(startOfWeek);
@@ -241,36 +328,42 @@
                     const hDay = hDate.getDate();
 
                     const todaysNames = data.filter(row => {
-                        if (!row.HebrewDay || !row.HebrewMonth) return false;
-                        try {
-                            const rowDay = parseInt(row.HebrewDay); 
-                            const rowMonth = row.HebrewMonth.trim();
-                            return rowDay === hDay && isMonthMatch(rowMonth, hMonth);
-                        } catch (e) { return false; }
+                        const info = extractHebrewInfo(row);
+                        if (!info.day || !info.month) return false;
+                        return info.day === hDay && isMonthMatch(info.month, hMonth);
                     });
                     
-                    // Add calculated display dates to the object for later
+                    todaysNames.sort((a, b) => {
+                        const nameA = (a.EnglishName || "").trim().toLowerCase();
+                        const nameB = (b.EnglishName || "").trim().toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    });
+
                     todaysNames.forEach(p => {
-                        p.calcHebDate = `${rowToHebrew(hDay)} ${translateMonth(hMonth)}`;
+                        const info = extractHebrewInfo(p);
+                        let baseHebDate = `${rowToHebrew(hDay)} ${translateMonth(hMonth)}`;
+                        
+                        if (info.year) {
+                            baseHebDate += ` ${yearToHebrew(info.year)}`;
+                        }
+                        
+                        p.calcHebDate = baseHebDate;
                         allPlaques.push(p);
                     });
                 }
 
-                // 4. Render Pages
                 const viewport = document.getElementById('viewport');
-                viewport.innerHTML = ''; // Clear loading
+                viewport.innerHTML = ''; 
 
                 if (allPlaques.length === 0) {
                     viewport.innerHTML = '<div style="color:#d4af37; text-align:center; margin-top: 50px;">No Yahrzeits found for this week.</div>';
                     return;
                 }
 
-                // --- PAGINATION LOGIC ---
                 const itemsPerPage = ROWS_PER_PAGE * COLS_PER_PAGE;
                 let currentPageDiv = null;
 
                 allPlaques.forEach((person, index) => {
-                    // Start a new page every X items
                     if (index % itemsPerPage === 0) {
                         currentPageDiv = document.createElement('div');
                         currentPageDiv.className = 'page-container';
@@ -279,14 +372,34 @@
                     createPlaque(person, person.calcHebDate, currentPageDiv);
                 });
 
-                // Start Auto Scroll (Page Flipping)
                 setTimeout(startPageScroll, 1500);
 
             } catch (error) {
-                clearTimeout(loadTimeout);
                 console.error(error);
                 showError(error.message);
             }
+        }
+
+        function extractHebrewInfo(row) {
+            let rDay = null, rMonth = null, rYear = null;
+            
+            if (row.HebrewDate) {
+                let parts = row.HebrewDate.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    rDay = parseInt(parts[0]);
+                    
+                    let lastPart = parts[parts.length - 1];
+                    if (!isNaN(lastPart) && lastPart.length === 4) {
+                        rYear = parts.pop(); 
+                    }
+                    rMonth = parts.slice(1).join(' '); 
+                }
+            } else {
+                rDay = parseInt(row.HebrewDay);
+                rMonth = row.HebrewMonth ? row.HebrewMonth.trim() : null;
+                rYear = row.HebrewYear ? row.HebrewYear.trim() : null;
+            }
+            return { day: rDay, month: rMonth, year: rYear };
         }
 
         function waitForLayout() {
@@ -306,29 +419,21 @@
             document.documentElement.style.setProperty('--safe-height', `${safeContainerWidth}px`);
             document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
             document.documentElement.style.setProperty('--rows', ROWS_PER_PAGE);
-            // Gap is fixed in CSS var now
         }
 
-        // --- NEW: PAGE FLIP SCROLLER ---
         function startPageScroll() {
             const viewport = document.getElementById('viewport');
             const pages = document.querySelectorAll('.page-container');
             
-            // If only 1 page, don't scroll
             if (pages.length <= 1) return;
 
             const PAGE_DELAY = 15000; 
 
             scrollInterval = setInterval(() => {
-                // Increment page index
                 pageIndex++;
-                
-                // If we reached the end, go back to top (0)
                 if (pageIndex >= pages.length) {
                     pageIndex = 0;
                 }
-
-                // Smoothly scroll to that specific page element
                 pages[pageIndex].scrollIntoView({ behavior: 'smooth' });
             }, PAGE_DELAY);
         }
@@ -343,7 +448,7 @@
             plaque.className = 'plaque';
             
             const hebrewName = person.HebrewName || "";
-            const englishName = `${person.FirstName || ""} ${person.LastName || ""}`;
+            const englishName = person.EnglishName || ""; 
             const englishDate = person.EnglishDate || ""; 
 
             plaque.innerHTML = `
@@ -363,28 +468,81 @@
 
         function isMonthMatch(sheetMonth, hebcalMonth) {
             if (!sheetMonth) return false;
-            return hebcalMonth.toLowerCase().includes(sheetMonth.toLowerCase()) || 
-                   sheetMonth.toLowerCase().includes(hebcalMonth.toLowerCase());
+            
+            let sMonth = sheetMonth.toLowerCase();
+            if (sMonth === 'shevat') sMonth = "sh'vat";
+            if (sMonth === 'tammuz') sMonth = "tamuz";
+            if (sMonth === 'teves') sMonth = "tevet";
+
+            let hMonth = hebcalMonth.toLowerCase();
+            
+            return hMonth.includes(sMonth) || sMonth.includes(hMonth);
         }
         
         function rowToHebrew(num) {
             const gematria = ["","א","ב","ג","ד","ה","ו","ז","ח","ט","י","יא","יב","יג","יד","טו","טז","יז","יח","יט","כ","כא","כב","כג","כד","כה","כו","כז","כח","כט","ל"];
-            return gematria[num] || num;
+            if (gematria[num]) {
+                return gematria[num] + "'"; 
+            }
+            return num;
+        }
+
+        function yearToHebrew(year) {
+            let y = parseInt(year);
+            if (isNaN(y)) return year; 
+            
+            if (y >= 5000) y -= 5000; 
+            
+            let result = "";
+            let hundreds = Math.floor(y / 100);
+            let remainder = y % 100;
+            
+            while (hundreds >= 4) {
+                result += "ת";
+                hundreds -= 4;
+            }
+            const hundMap = ["", "ק", "ר", "ש"];
+            result += hundMap[hundreds];
+            
+            if (remainder === 15) {
+                result += "טו";
+            } else if (remainder === 16) {
+                result += "טז";
+            } else {
+                let tens = Math.floor(remainder / 10);
+                let units = remainder % 10;
+                const tensMap = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
+                const unitsMap = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
+                result += tensMap[tens];
+                result += unitsMap[units];
+            }
+            
+            if (result.length > 1) {
+                result = result.slice(0, -1) + '"' + result.slice(-1);
+            } else if (result.length === 1) {
+                result += "'";
+            }
+            
+            return result;
         }
         
         function translateMonth(englishMonth) {
             const map = {
-                'Nisan': 'ניסן', 'Iyyar': 'אייר', 'Sivan': 'סיון', 'Tamuz': 'תמוז', 'Av': 'אב', 'Elul': 'אלול',
-                'Tishrei': 'תשרי', 'Cheshvan': 'חשון', 'Kislev': 'כסלו', 'Tevet': 'טבת', 'Sh\'vat': 'שבט',
+                'Nisan': 'ניסן', 'Iyyar': 'אייר', 'Sivan': 'סיון', 'Tamuz': 'תמוז', 'Tammuz': 'תמוז', 'Av': 'אב', 'Elul': 'אלול',
+                'Tishrei': 'תשרי', 'Cheshvan': 'חשון', 'Kislev': 'כסלו', 'Tevet': 'טבת', 'Teves': 'טבת', 'Sh\'vat': 'שבט', 'Shevat': 'שבט',
                 'Adar': 'אדר', 'Adar I': 'אדר א', 'Adar II': 'אדר ב'
             };
             return map[englishMonth] || englishMonth;
         }
 
         window.addEventListener('resize', calculateLayout);
-        window.onload = initBoard; 
         
-        setInterval(initBoard, 1000 * 60 * 60 * 4); 
+        window.onload = () => {
+            initBoard(); 
+            updateClock(); 
+            setInterval(updateClock, 1000); 
+            setInterval(initBoard, 1000 * 60 * 60 * 4); 
+        };
     </script>
 </body>
 </html>
