@@ -43,9 +43,8 @@
             position: relative; 
         }
         
-        /* --- SIDEBAR SHIFTED LEFT --- */
         .sidebar { 
-            width: 250px; /* Made wider to accommodate padding */
+            width: 250px; 
             background-color: #000; 
             border-right: 4px solid #b8860b; 
             display: flex; 
@@ -55,7 +54,6 @@
             box-shadow: 5px 0 20px rgba(0,0,0,0.9); 
             z-index: 10; 
             flex-shrink: 0;
-            /* 40px right padding pushes content securely away from the yellow line */
             padding: 20px 40px 20px 10px; 
             box-sizing: border-box;
         }
@@ -167,12 +165,21 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        /* --- FONT SIZES REDUCED FOR BREATHING ROOM --- */
+        /* --- HEBREW NAMES NOW WRAP TO 2 LINES --- */
         .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
-        .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.15em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .hebrew-name { 
+            font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.15em; color: #1a1a1a; direction: rtl; width: 100%; 
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
 
+        /* English names continue to wrap to 2 lines */
         .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
-        .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
+        .english-name { 
+            font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; 
+        }
 
         .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
         .footer-text { font-size: 0.75em; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -291,7 +298,7 @@
                 }
 
                 const today = new Date();
-                const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+                const dayOfWeek = today.getDay(); 
                 const currentHour = today.getHours();
                 
                 let daysToSubtract = 0;
@@ -424,7 +431,6 @@
             const totalGapSpace = 15 * (ROWS_PER_PAGE - 1);
             const rowHeight = (gridHeight - totalGapSpace) / ROWS_PER_PAGE;
             
-            // --- REDUCED MULTIPLIER to stop the TV from rendering massive squashed fonts ---
             const dynamicFontSize = Math.max(10, rowHeight * 0.13);
             document.documentElement.style.setProperty('--plaque-font-size', `${dynamicFontSize}px`);
         }
