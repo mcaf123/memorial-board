@@ -13,12 +13,15 @@
     <style>
         :root {
             --rotation: 90deg; 
-            --safe-width: 96vw; 
-            --safe-height: 96vh;
+            /* Margins drastically reduced to 98% to maximize screen real estate */
+            --safe-width: 98vw; 
+            --safe-height: 98vh;
             --cols: 3; 
-            --rows: 7;
-            --gap: 15px; 
-            --plaque-font-size: 16px; 
+            --rows: 10;
+            --gap: 12px; 
+            
+            /* Responsive font size strictly tied to screen dimensions so it never chops */
+            --plaque-font-size: 1.5vmin; 
         }
 
         body { 
@@ -44,7 +47,7 @@
         }
         
         .sidebar { 
-            width: 250px; 
+            width: 220px; 
             background-color: #000; 
             border-right: 4px solid #b8860b; 
             display: flex; 
@@ -54,7 +57,7 @@
             box-shadow: 5px 0 20px rgba(0,0,0,0.9); 
             z-index: 10; 
             flex-shrink: 0;
-            padding: 20px 20px 20px 10px; 
+            padding: 20px 15px 20px 10px; 
             box-sizing: border-box;
         }
         
@@ -86,44 +89,44 @@
         }
 
         .live-clock {
-            margin-top: 40px;
+            margin-top: 30px;
             text-align: center;
             width: 100%;
         }
         .clock-time {
             color: #d4af37;
             font-family: 'Assistant', sans-serif;
-            font-size: 2.8em; 
+            font-size: 3.5vmin; 
             font-weight: 700;
             letter-spacing: 2px;
             line-height: 1;
-            margin-bottom: 15px; 
+            margin-bottom: 12px; 
         }
         .clock-date-en {
             color: #cfaa60;
             font-family: 'Assistant', sans-serif;
-            font-size: 1.3em; 
-            margin-bottom: 10px; 
+            font-size: 2vmin; 
+            margin-bottom: 8px; 
         }
         .clock-date-heb {
             color: #cfaa60;
             font-family: 'Frank Ruhl Libre', serif;
-            font-size: 1.5em; 
+            font-size: 2.2vmin; 
             font-weight: 700;
             direction: rtl;
         }
 
-        .main-content { flex: 1; padding: 0 0 0 20px; overflow-y: hidden; display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 0 0 0 15px; overflow-y: hidden; display: flex; flex-direction: column; }
         
         .header-info { 
             color: #d4af37; 
             text-align: center; 
             font-size: 1.6em; 
-            margin-bottom: 15px; 
+            margin-bottom: 12px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
             border-bottom: 1px solid #333; 
-            padding-bottom: 10px; 
+            padding-bottom: 8px; 
             font-family: 'Frank Ruhl Libre', serif; 
             flex-shrink: 0; 
             line-height: 1.3;
@@ -152,17 +155,17 @@
             scroll-snap-stop: always;
         }
         
-        /* --- NEW FLUID PLAQUE LAYOUT (Fixes the text chopping) --- */
+        /* --- BULLETPROOF PLAQUE GRID --- */
         .plaque { 
             background: linear-gradient(135deg, #cfaa60 0%, #f3e5ab 40%, #cfaa60 100%); 
             border: 2px solid #8a6e2f; 
             border-radius: 2px; 
-            padding: 6px 10px; /* Slight padding buffer */
+            padding: 4px 8px; 
             box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
             
-            /* Using a Flex Column instead of rigid Grid percentages */
-            display: flex; 
-            flex-direction: column; 
+            /* Zones are mathematically locked so they NEVER overlap */
+            display: grid; 
+            grid-template-rows: 35% 45% 20%; 
             
             box-sizing: border-box; 
             position: relative; 
@@ -172,32 +175,26 @@
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        .plaque-zone-top { 
-            flex: 0 1 auto; /* Sizes naturally to the text */
-            width: 100%; 
-            display: flex; 
-            align-items: flex-start; 
-            justify-content: center; 
-            overflow: hidden; 
-        }
+        .plaque-zone-top { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
         .hebrew-name { 
-            font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.25em; color: #1a1a1a; direction: rtl; width: 100%; 
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.15; /* Better line spacing */
+            font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; width: 100%; 
+        }
+        
+        /* New styling for the split Hebrew Name feature */
+        .heb-name-flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            column-gap: 5px;
+        }
+        .heb-name-flex span {
+            text-align: center;
+            line-height: 1.15;
         }
 
-        .plaque-zone-mid { 
-            flex: 1 1 auto; /* Expands to fill empty space, centering the English text */
-            width: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-            margin: 2px 0; /* Tiny buffer top and bottom */
-        }
+        .plaque-zone-mid { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
         .english-name { 
             font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.1em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; 
             display: -webkit-box; 
@@ -205,17 +202,10 @@
             -webkit-box-orient: vertical; 
             overflow: hidden; 
             width: 100%; 
-            line-height: 1.15; /* Better line spacing */
+            line-height: 1.15;
         }
 
-        .plaque-zone-bot { 
-            flex: 0 0 auto; /* Sizes naturally to the text */
-            width: 100%; 
-            display: flex; 
-            align-items: flex-end; 
-            justify-content: space-between; 
-            overflow: hidden; 
-        }
+        .plaque-zone-bot { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; height: 100%; overflow: hidden; padding-bottom: 2px; }
         .footer-text { font-size: 0.8em; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .date-left { text-align: left; padding-right: 5px; }
         .date-right { text-align: right; direction: rtl; padding-left: 5px; }
@@ -250,7 +240,8 @@
         // --- SETTINGS ---
         const SHEET_ID = "2PACX-1vQiZ-4k29re4CrRPPu9Nm7ZavFMDqbOlY5I07ktxe-ExPsfyxsaQuOBKTPP7_HyLU-2AcSRH_4TkPQP";
         
-        const SAFE_SCALE = 0.96; 
+        // Expanded to 98% for maximum use of TV space
+        const SAFE_SCALE = 0.98; 
         const ROWS_PER_PAGE = 10;   
         const COLS_PER_PAGE = 3;   
         // ----------------
@@ -459,15 +450,8 @@
             document.documentElement.style.setProperty('--safe-height', `${safeContainerWidth}px`);
             document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
             document.documentElement.style.setProperty('--rows', ROWS_PER_PAGE);
-
-            const verticalHeight = Math.max(safeContainerWidth, safeContainerHeight);
-            const gridHeight = verticalHeight - 100; 
-            const totalGapSpace = 15 * (ROWS_PER_PAGE - 1);
-            const rowHeight = (gridHeight - totalGapSpace) / ROWS_PER_PAGE;
             
-            // Adjusted dynamic font multiplier for the new flex layout
-            const dynamicFontSize = Math.max(10, rowHeight * 0.12); 
-            document.documentElement.style.setProperty('--plaque-font-size', `${dynamicFontSize}px`);
+            // Dynamic Font script removed. Sizing is now purely handled in CSS by responsive vmin calculation.
         }
 
         function startPageScroll() {
@@ -492,17 +476,37 @@
             vp.innerHTML = `<div class="error-message"><strong>ERROR:</strong><br>${msg}</div>`;
         }
 
+        // --- NEW: SMART HEBREW NAME FORMATTER ---
+        function formatHebrewName(name) {
+            if (!name) return "";
+            
+            // Scans for the lineage keywords
+            const regex = /( בן | בת | ב"ר | ב׳ר | ב״ר )/;
+            const parts = name.split(regex);
+            
+            // If it finds the keyword, it neatly wraps the name to two lines exactly between them
+            if (parts.length >= 3) {
+                const firstPart = parts[0].trim();
+                const rest = parts.slice(1).join("").trim();
+                return `<div class="heb-name-flex"><span>${firstPart}</span><span>${rest}</span></div>`;
+            }
+            
+            return `<div class="heb-name-flex"><span>${name}</span></div>`;
+        }
+
         function createPlaque(person, hebrewDateStr, container) {
             const plaque = document.createElement('div');
             plaque.className = 'plaque';
             
-            const hebrewName = person.HebrewName || "";
+            const rawHebrewName = person.HebrewName || "";
+            const formattedHebrewName = formatHebrewName(rawHebrewName); // Apply the smart split
+            
             const englishName = person.EnglishName || ""; 
             const englishDate = person.EnglishDate || ""; 
 
             plaque.innerHTML = `
                 <div class="plaque-zone-top">
-                    <div class="hebrew-name">${hebrewName}</div>
+                    <div class="hebrew-name">${formattedHebrewName}</div>
                 </div>
                 <div class="plaque-zone-mid">
                     <div class="english-name">${englishName}</div>
