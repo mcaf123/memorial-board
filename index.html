@@ -18,6 +18,7 @@
             --cols: 3; 
             --rows: 7;
             --gap: 15px; 
+            --plaque-font-size: 16px; 
         }
 
         body { 
@@ -141,8 +142,8 @@
             height: 100%;
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(var(--cols), 1fr);
-            grid-template-rows: repeat(var(--rows), 1fr); 
+            grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+            grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); 
             gap: var(--gap);
             padding-bottom: 20px; 
             box-sizing: border-box;
@@ -157,19 +158,22 @@
             padding: 0; 
             box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 5px 10px rgba(0,0,0,0.8); 
             display: flex; flex-direction: column; height: 100%; box-sizing: border-box; position: relative; text-align: center; 
+            font-size: var(--plaque-font-size);
+            overflow: hidden;
+            min-height: 0; 
         }
         .plaque::after { content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(0,0,0,0.15); pointer-events: none; }
         
-        .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
+        .plaque-zone-top { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
         .hebrew-name { font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: 1.3em; color: #1a1a1a; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
-        .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; }
-        .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.2em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
+        .plaque-zone-mid { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
+        .english-name { font-family: 'Assistant', sans-serif; font-weight: 800; font-size: 1.1em; text-transform: uppercase; color: #000; letter-spacing: 0.5px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
 
-        .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; }
-        .footer-text { font-size: 0.8em; font-weight: 700; color: #222; }
-        .date-left { text-align: left; }
-        .date-right { text-align: right; direction: rtl; }
+        .plaque-zone-bot { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 8px 6px 8px; box-sizing: border-box; min-height: 0; overflow: hidden; }
+        .footer-text { font-size: 0.8em; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .date-left { text-align: left; padding-right: 5px; }
+        .date-right { text-align: right; direction: rtl; padding-left: 5px; }
         
         .loading { color: #d4af37; text-align: center; font-size: 1.5em; margin-top: 50px; width: 100%; }
         .error-message { color: #ff6b6b; font-family: monospace; text-align: left; padding: 20px; background: rgba(50,0,0,0.8); border: 1px solid red; white-space: pre-wrap; margin: 20px; border-radius: 8px; font-size: 1.2em; }
@@ -248,7 +252,6 @@
             throw new Error("Could not connect to Google Sheets, and no offline backup exists. Please check internet connection.");
         }
 
-
         function updateClock() {
             const now = new Date();
             
@@ -270,7 +273,6 @@
             try {
                 if (scrollInterval) clearInterval(scrollInterval);
                 
-                await waitForLayout();
                 calculateLayout(); 
 
                 const csvText = await fetchSpreadsheetData();
@@ -284,17 +286,20 @@
                     }
                 }
 
-                // --- NEW SHABBOS TO FRIDAY LOGIC ---
                 const today = new Date();
-                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday ... 6 = Saturday
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+                const currentHour = today.getHours();
                 
                 let daysToSubtract = 0;
+                
                 if (dayOfWeek === 6) {
-                    // Today is Saturday, start the week today
+                    // It is Saturday, start the week today
                     daysToSubtract = 0;
+                } else if (dayOfWeek === 5 && currentHour >= 14) {
+                    // It is Friday at 2:00 PM or later. Advance to tomorrow (Saturday)
+                    daysToSubtract = -1;
                 } else {
-                    // Today is Sunday through Friday. Subtract dayOfWeek + 1 to get back to Saturday.
-                    // (e.g. Sunday = 0. Subtract 1 to get to Saturday)
+                    // Sunday through Friday morning. Go back to the previous Saturday
                     daysToSubtract = dayOfWeek + 1;
                 }
 
@@ -302,7 +307,7 @@
                 startOfWeek.setDate(today.getDate() - daysToSubtract);
                 
                 const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday + 6 days = Friday
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
 
                 const enFormat = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 const dateRangeEn = `${startOfWeek.toLocaleDateString('en-GB', enFormat)} - ${endOfWeek.toLocaleDateString('en-GB', enFormat)}`;
@@ -402,13 +407,6 @@
             return { day: rDay, month: rMonth, year: rYear };
         }
 
-        function waitForLayout() {
-            return new Promise(resolve => {
-                const check = () => { if (window.innerWidth > 0) resolve(); else setTimeout(check, 100); };
-                check();
-            });
-        }
-
         function calculateLayout() {
             const winWidth = window.innerWidth;
             const winHeight = window.innerHeight;
@@ -419,6 +417,14 @@
             document.documentElement.style.setProperty('--safe-height', `${safeContainerWidth}px`);
             document.documentElement.style.setProperty('--cols', COLS_PER_PAGE);
             document.documentElement.style.setProperty('--rows', ROWS_PER_PAGE);
+
+            const verticalHeight = Math.max(safeContainerWidth, safeContainerHeight);
+            const gridHeight = verticalHeight - 100; 
+            const totalGapSpace = 15 * (ROWS_PER_PAGE - 1);
+            const rowHeight = (gridHeight - totalGapSpace) / ROWS_PER_PAGE;
+            
+            const dynamicFontSize = Math.max(10, rowHeight * 0.18);
+            document.documentElement.style.setProperty('--plaque-font-size', `${dynamicFontSize}px`);
         }
 
         function startPageScroll() {
